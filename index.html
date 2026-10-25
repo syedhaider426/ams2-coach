@@ -131,7 +131,7 @@ function events() {
   const evs = (DATA.events || []).slice(0, 8);
   $('events').innerHTML = evs.length ? '<div class="tablewrap"><table><tr><th class="l">When</th><th class="l">Track</th><th class="l">Car</th><th class="l">Sessions</th><th>Laps</th><th>Best</th><th class="l"></th></tr>' +
     evs.map(e => `<tr><td class="l">${day(e.date)}</td><td class="l">${esc(pretty(e.track))}</td><td class="l">${esc(e.car)}</td>` +
-      `<td class="l">${e.sessions.map(s => `<span class="tag" title="${esc(s.error || (s.laps + ' laps, best ' + fmt(s.best && s.best.time)))}">${esc(s.type)}${s.error ? ' (no full lap)' : ''}</span>`).join(' ')}</td>` +
+      `<td class="l">${e.sessions.map(s => `<span class="tag" title="${esc(s.error || (s.laps + ' laps, best ' + fmt(s.best && s.best.time)))}">${esc(s.type)}${s.error ? ' (no full lap)' : ''}</span>`).join(' ')}${e.hiddenRestarts ? ` <span class="sub">+${e.hiddenRestarts} restart${e.hiddenRestarts === 1 ? '' : 's'}</span>` : ''}</td>` +
       `<td>${e.laps}</td><td><b>${e.best ? fmt(e.best.time) : '-'}</b></td><td class="l"><a href="${R.event(e.id)}">Open event</a></td></tr>`).join('') + '</table></div>'
     : '<div class="sub">No events yet.</div>';
 }

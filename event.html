@@ -97,7 +97,8 @@ async function load() {
   E.sessions.forEach(s => { count[s.type] = (count[s.type] || 0) + 1; s.name = seen[s.type] > 1 ? `${s.type} ${count[s.type]}` : s.type; });
   const ev = E.event;
   $('title').textContent = `${pretty(ev.track)}${ev.variation && ev.variation !== ev.track ? ' · ' + pretty(ev.variation.replace(ev.track + '_', '')) : ''}`;
-  $('subtitle').textContent = `${ev.car} · ${day(ev.date)} · ${E.sessions.length} session${E.sessions.length === 1 ? '' : 's'}`;
+  $('subtitle').textContent = `${ev.car} · ${day(ev.date)} · ${E.sessions.length} session${E.sessions.length === 1 ? '' : 's'}` +
+    (ev.hiddenRestarts ? ` (+${ev.hiddenRestarts} restart${ev.hiddenRestarts === 1 ? '' : 's'} without a full lap, not shown)` : '');
   document.title = `${pretty(ev.track)} event`;
   render();
 }
