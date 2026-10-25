@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en" data-static="1">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMS2 Coach</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #16181d; --muted: #5d6573; --line: #e2e5ea; --chip: #eef1f5; --grid: #eceef2;
+  --a: #2563eb; --b: #e8590c; --good: #1f9d55; --bad: #d64545; --warn: #b7791f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1115; --panel: #171a21; --ink: #e8eaee; --muted: #9aa3b2; --line: #262b35; --chip: #222733; --grid: #20242d;
+    --a: #6ea8ff; --b: #ff9a52; --good: #3ecf7a; --bad: #ff6b6b; --warn: #f2c14e;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1115; --panel: #171a21; --ink: #e8eaee; --muted: #9aa3b2; --line: #262b35; --chip: #222733; --grid: #20242d;
+  --a: #6ea8ff; --b: #ff9a52; --good: #3ecf7a; --bad: #ff6b6b; --warn: #f2c14e;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; }
+h1 { font-size: 22px; margin: 0; }
+h2 { font-size: 16px; margin: 0 0 12px; }
+.sub { color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-top: 16px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 14px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.tile .k { color: var(--muted); font-size: 12px; }
+.tile .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chip { font: inherit; color: var(--ink); background: var(--chip); border: 1px solid var(--line); border-radius: 99px; padding: 4px 12px; cursor: pointer; }
+.chip.on { background: var(--a); border-color: var(--a); color: #fff; }
+button { font: inherit; color: var(--ink); background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
+@media (max-width: 860px) { .grid3, .grid2 { grid-template-columns: minmax(0, 1fr); } }
+svg text { fill: var(--muted); font-size: 11px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th.l, td.l { text-align: left; }
+th { color: var(--muted); font-weight: 500; font-size: 12px; }
+a { color: var(--a); text-decoration: none; } a:hover { text-decoration: underline; }
+.finding { padding: 9px 0; border-top: 1px solid var(--line); } .finding:first-of-type { border-top: 0; }
+.finding b { display: block; }
+.tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--chip); color: var(--muted); margin-right: 6px; }
+.live { color: var(--good); font-size: 12px; }
+.empty { padding: 40px 10px; text-align: center; color: var(--muted); }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.good { color: var(--good); } .bad { color: var(--bad); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>AMS2 Coach</h1>
+      <div class="sub" id="where">Loading sessions...</div>
+    </div>
+    <div><span class="sub" id="updated"></span> <button id="refresh">Refresh</button></div>
+  </header>
+  <div class="panel">
+    <h2>Race weekends (practice, qualifying and race grouped)</h2>
+    <div id="events"></div>
+  </div>
+  <div class="chips" id="combos"></div>
+  <div class="tiles" id="tiles"></div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>Lap time by session</h2>
+      <div class="legend"><span><i class="sw" style="background:var(--a)"></i>Best lap</span><span><i class="sw" style="background:var(--b)"></i>Typical lap</span></div>
+      <svg id="laps" style="width:100%;display:block"></svg>
+    </div>
+    <div class="panel">
+      <h2>Your focus for the next session</h2>
+      <div id="coach"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Habits over time (best lap of each session)</h2>
+    <div class="grid3" id="habits"></div>
+  </div>
+
+  <div id="coachFull"></div>
+
+  <div class="panel">
+    <h2>All sessions</h2>
+    <div class="tablewrap"><table id="table"></table></div>
+  </div>
+</main>
+<script>
+// Same pages run from the local server or as a published static site (the export sets data-static="1").
+const STATIC = document.documentElement.dataset.static === "1";
+const R = {
+  sessions: () => STATIC ? "data/sessions.json" : "/api/sessions",
+  eventData: id => STATIC ? "data/events/" + encodeURIComponent(id) + ".json" : "/api/event/" + encodeURIComponent(id),
+  event: id => STATIC ? "event.html?id=" + encodeURIComponent(id) : "/event/" + encodeURIComponent(id),
+  report: base => STATIC ? "reports/" + encodeURIComponent(base) + ".html" : "/report/" + encodeURIComponent(base),
+  home: () => STATIC ? "index.html" : "/",
+};
+const $ = id => document.getElementById(id);
+const NS = 'http://www.w3.org/2000/svg';
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const pretty = s => String(s || '').replace(/_/g, ' ').trim();
+const fmt = t => { if (!(t > 0)) return '-'; const m = Math.floor(t / 60); return m + ':' + (t - m * 60).toFixed(3).padStart(6, '0'); };
+const day = d => d ? new Date(d).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+const comboOf = s => s.error ? null : `${pretty(s.track)} · ${s.car}`;
+
+let DATA = null, combo = null, lastSig = '';
+
+async function load() {
+  const r = await fetch(R.sessions(), { cache: 'no-store' });
+  const d = await r.json();
+  const sig = JSON.stringify(d.sessions.map(s => [s.base, s.best && s.best.time, s.lapsComplete, s.lapsPartial, s.error]));
+  $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  if (sig === lastSig) return;
+  lastSig = sig; DATA = d;
+  render();
+}
+
+function events() {
+  const evs = (DATA.events || []).slice(0, 8);
+  $('events').innerHTML = evs.length ? '<div class="tablewrap"><table><tr><th class="l">When</th><th class="l">Track</th><th class="l">Car</th><th class="l">Sessions</th><th>Laps</th><th>Best</th><th class="l"></th></tr>' +
+    evs.map(e => `<tr><td class="l">${day(e.date)}</td><td class="l">${esc(pretty(e.track))}</td><td class="l">${esc(e.car)}</td>` +
+      `<td class="l">${e.sessions.map(s => `<span class="tag" title="${esc(s.error || (s.laps + ' laps, best ' + fmt(s.best && s.best.time)))}">${esc(s.type)}${s.error ? ' (no full lap)' : ''}</span>`).join(' ')}</td>` +
+      `<td>${e.laps}</td><td><b>${e.best ? fmt(e.best.time) : '-'}</b></td><td class="l"><a href="${R.event(e.id)}">Open event</a></td></tr>`).join('') + '</table></div>'
+    : '<div class="sub">No events yet.</div>';
+}
+
+function render() {
+  events();
+  const sessions = DATA.sessions;
+  $('where').textContent = `${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${DATA.dataDir ? 'reading ' + DATA.dataDir : 'published ' + day(DATA.publishedAt)}`;
+  const combos = [...new Set(sessions.map(comboOf).filter(Boolean))];
+  if (!combo || (combo !== 'all' && !combos.includes(combo))) combo = combos[0] || 'all';
+  $('combos').innerHTML = [...combos, 'all'].map(c => `<button class="chip${c === combo ? ' on' : ''}" data-c="${esc(c)}">${c === 'all' ? 'All sessions' : esc(c)}</button>`).join('');
+  $('combos').querySelectorAll('.chip').forEach(b => b.onclick = () => { combo = b.dataset.c; render(); });
+
+  const sel = sessions.filter(s => combo === 'all' || comboOf(s) === combo);
+  const ok = sel.filter(s => !s.error).slice().reverse(); // oldest first for charts
+  tiles(sel, ok);
+  lapChart(ok);
+  habits(ok);
+  coach(sel.find(s => !s.error));
+  table(sel);
+}
+
+function tiles(sel, ok) {
+  const laps = ok.reduce((n, s) => n + s.lapsComplete, 0), partial = ok.reduce((n, s) => n + s.lapsPartial, 0);
+  const km = sel.reduce((n, s) => n + (s.drivenKm || 0), 0), mins = sel.reduce((n, s) => n + (s.driveMinutes || 0), 0);
+  const pb = ok.reduce((b, s) => (!b || s.best.time < b.best.time ? s : b), null);
+  const first = ok[0], last = ok[ok.length - 1];
+  const delta = first && last && first !== last ? last.best.time - first.best.time : null;
+  const t = [
+    ['Personal best', pb ? fmt(pb.best.time) : '-', pb ? day(pb.date) : 'no complete laps yet'],
+    ['Latest best', last ? fmt(last.best.time) : '-', delta === null ? 'first session' : `<span class="${delta < 0 ? 'good' : 'bad'}">${delta < 0 ? '' : '+'}${delta.toFixed(2)} s</span> vs first session${last.best.standing ? ' (standing start)' : ''}`],
+    ['Sessions', sel.length, `${laps} full laps · ${partial} partial`],
+    ['Driven', `${Math.round(km)} km`, `${Math.round(mins)} min on track`],
+  ];
+  $('tiles').innerHTML = t.map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${esc(v)}</div><div class="k">${s}</div></div>`).join('');
+}
+
+function axes(svg, w, h, pad, lo, hi, fmtY) {
+  [lo, (lo + hi) / 2, hi].forEach(v => {
+    const y = h - pad.b - (v - lo) / (hi - lo) * (h - pad.t - pad.b);
+    el('line', { x1: pad.l, x2: w - pad.r, y1: y, y2: y, stroke: css('--grid') }, svg);
+    el('text', { x: pad.l - 6, y: y + 4, 'text-anchor': 'end' }, svg).textContent = fmtY(v);
+  });
+}
+
+function series(svg, pts, color, dash) {
+  if (!pts.length) return;
+  el('path', { d: pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(''), fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', 'stroke-dasharray': dash || '' }, svg);
+  pts.forEach(p => { const c = el('circle', { cx: p[0], cy: p[1], r: 4, fill: color, stroke: css('--panel'), 'stroke-width': 2 }, svg); if (p[2]) el('title', {}, c).textContent = p[2]; });
+}
+
+function lapChart(ok) {
+  const svg = $('laps'); svg.innerHTML = '';
+  const w = 640, h = 230, pad = { l: 58, r: 14, t: 10, b: 28 };
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  if (!ok.length) { el('text', { x: w / 2, y: h / 2, 'text-anchor': 'middle' }, svg).textContent = 'No complete laps yet'; return; }
+  if (combo === 'all') { el('text', { x: w / 2, y: h / 2, 'text-anchor': 'middle' }, svg).textContent = 'Pick a track and car above to compare lap times'; return; }
+  const vals = ok.flatMap(s => [s.best.time, s.typical.time]);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const padT = Math.max(0.5, (hi - lo) * 0.15); lo -= padT; hi += padT;
+  axes(svg, w, h, pad, lo, hi, fmt);
+  const X = i => ok.length === 1 ? (pad.l + w - pad.r) / 2 : pad.l + i * (w - pad.l - pad.r) / (ok.length - 1);
+  const Y = v => h - pad.b - (v - lo) / (hi - lo) * (h - pad.t - pad.b);
+  ok.forEach((s, i) => { el('text', { x: X(i), y: h - 8, 'text-anchor': 'middle' }, svg).textContent = new Date(s.date).toLocaleDateString([], { month: 'short', day: 'numeric' }); });
+  series(svg, ok.map((s, i) => [X(i), Y(s.typical.time), `${day(s.date)} typical ${fmt(s.typical.time)}`]), css('--b'), '5 4');
+  series(svg, ok.map((s, i) => [X(i), Y(s.best.time), `${day(s.date)} best ${fmt(s.best.time)}`]), css('--a'));
+}
+
+function habits(ok) {
+  const defs = [
+    ['Coasting', 'coastPct', '% of lap off both pedals · lower is better', true],
+    ['ABS active', 'absPct', '% of lap with ABS working · lower is better', true],
+    ['Full throttle', 'fullThrottlePct', '% of lap flat out · higher is better', false],
+  ];
+  $('habits').innerHTML = '';
+  defs.forEach(([name, key, note, lowerBetter]) => {
+    const pts = ok.filter(s => s.stats).map(s => ({ s, v: s.stats[key] }));
+    const box = document.createElement('div');
+    const last = pts[pts.length - 1], first = pts[0];
+    const d = last && first && last !== first ? last.v - first.v : null;
+    const cls = d === null ? '' : ((d < 0) === lowerBetter ? 'good' : 'bad');
+    box.innerHTML = `<div class="sub" style="font-size:12px">${name}</div><div style="font-size:20px;font-weight:600">${last ? last.v.toFixed(1) + '%' : '-'} <span class="${cls}" style="font-size:13px">${d === null ? '' : (d > 0 ? '+' : '') + d.toFixed(1)}</span></div><div class="sub" style="font-size:11px;margin-bottom:6px">${note}</div>`;
+    const svg = el('svg', { viewBox: '0 0 300 90', style: 'width:100%;display:block' });
+    box.appendChild(svg);
+    if (pts.length) {
+      const vs = pts.map(p => p.v); let lo = Math.min(...vs), hi = Math.max(...vs);
+      if (hi - lo < 4) { lo -= 2; hi += 2; }
+      const X = i => pts.length === 1 ? 150 : 10 + i * 280 / (pts.length - 1), Y = v => 80 - (v - lo) / (hi - lo) * 70;
+      el('line', { x1: 0, x2: 300, y1: 80, y2: 80, stroke: css('--grid') }, svg);
+      series(svg, pts.map((p, i) => [X(i), Y(p.v), `${day(p.s.date)}: ${p.v.toFixed(1)}%`]), css('--a'));
+    }
+    $('habits').appendChild(box);
+  });
+}
+
+function coach(s) {
+  if (!s) { $('coach').innerHTML = '<div class="empty">Drive a full lap with the logger running.</div>'; $('coachFull').innerHTML = ''; return; }
+  const C = s.coaching || { pros: [], cons: [], improve: [], stopDoing: [], hud: { show: [], hide: [] }, settings: [] };
+  const items = (list, body) => list.map(x => `<div class="finding"><b>${esc(x.title)}</b><span class="sub">${esc(body(x))}</span>${x.target ? `<div><span class="tag" style="margin-top:4px">Target: ${esc(x.target)}</span></div>` : ''}</div>`).join('');
+  const head = `<div class="sub" style="font-size:12px;margin-bottom:6px">From ${day(s.date)} · ${esc(pretty(s.track))} · <a href="${R.report(s.base)}" target="_blank">open full report</a></div>`;
+  $('coach').innerHTML = head +
+    (C.improve.length ? `<div class="sub" style="font-size:12px;margin:6px 0 0">Practise</div>` + C.improve.slice(0, 2).map((x, i) => `<div class="finding"><b>${i + 1}. ${esc(x.title)}</b><span class="sub">${esc(x.how)}</span><div><span class="tag" style="margin-top:4px">Target: ${esc(x.target)}</span></div></div>`).join('') : '') +
+    (C.stopDoing.length ? `<div class="sub" style="font-size:12px;margin:10px 0 0">Stop</div>` + C.stopDoing.slice(0, 3).map(x => `<div class="finding"><b>${esc(x.title)}</b></div>`).join('') : '');
+  const card = (color, title, inner) => `<div class="panel" style="margin-top:0"><h2><span class="sw" style="background:var(${color});border-radius:50%"></span>${title}</h2>${inner || '<div class="sub">Nothing flagged.</div>'}</div>`;
+  $('coachFull').innerHTML =
+    `<h2 style="margin:28px 0 0">Detailed coaching · latest session</h2>` +
+    `<div class="grid2" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:12px">` +
+    card('--good', 'What you do well', items(C.pros, x => x.detail)) + card('--bad', 'Where you lose time', items(C.cons, x => x.detail)) +
+    card('--a', 'What to practise (in order)', items(C.improve, x => x.how)) + card('--warn', 'Stop doing this', items(C.stopDoing, x => x.detail)) +
+    card('--a', 'Put on your HUD', items(C.hud.show.map(h => ({ title: h.item, d: h.why })), x => x.d)) +
+    card('--muted', 'Take off your HUD', items(C.hud.hide.map(h => ({ title: h.item, d: h.why })), x => x.d)) +
+    `</div><div class="panel"><h2>Settings notes for this car type</h2>${C.settings.map(t => `<div class="finding"><span class="sub">${esc(t)}</span></div>`).join('')}</div>`;
+}
+
+function table(sel) {
+  if (!sel.length) { $('table').innerHTML = '<tr><td class="empty">No sessions yet. Start the logger and drive.</td></tr>'; return; }
+  $('table').innerHTML = '<tr><th class="l">When</th><th class="l">Track</th><th class="l">Car</th><th>Runs</th><th>Laps</th><th>Best</th><th>Typical</th><th>Coasting</th><th>ABS</th><th>Full throttle</th><th class="l"></th></tr>' +
+    sel.map(s => s.error
+      ? `<tr><td class="l">${day(s.date)}${s.recording ? ' <span class="live">recording</span>' : ''}</td><td class="l" colspan="9">${esc(s.label)} <span class="sub">· ${esc(s.error)}</span></td><td></td></tr>`
+      : `<tr><td class="l">${day(s.date)}${s.recording ? ' <span class="live">recording</span>' : ''}</td><td class="l">${esc(pretty(s.track))}</td><td class="l">${esc(s.car)}</td>` +
+        `<td>${s.runs}</td><td>${s.lapsComplete}${s.lapsPartial ? ` <span class="sub">+${s.lapsPartial} partial</span>` : ''}</td><td><b>${fmt(s.best.time)}</b></td><td>${fmt(s.typical.time)}</td>` +
+        `<td>${s.stats ? s.stats.coastPct + '%' : '-'}</td><td>${s.stats ? s.stats.absPct + '%' : '-'}</td><td>${s.stats ? s.stats.fullThrottlePct + '%' : '-'}</td>` +
+        `<td class="l"><a href="${R.report(s.base)}" target="_blank">Report</a></td></tr>`).join('');
+}
+
+$('refresh').onclick = () => { lastSig = ''; load(); };
+load().catch(e => { $('where').textContent = 'Could not load sessions: ' + e.message; });
+setInterval(() => load().catch(() => {}), 20000);
+</script>
+</body>
+</html>
