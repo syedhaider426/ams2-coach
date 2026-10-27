@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMS2 Lap Report</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #16181d; --muted: #5d6573; --line: #e2e5ea;
+  --thr: #1f9d55; --brk: #d64545; --coast: #d19a00; --a: #2563eb; --b: #e8590c; --grid: #eceef2; --chip: #eef1f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1115; --panel: #171a21; --ink: #e8eaee; --muted: #9aa3b2; --line: #262b35;
+    --thr: #3ecf7a; --brk: #ff6b6b; --coast: #f2c14e; --a: #6ea8ff; --b: #ff9a52; --grid: #20242d; --chip: #222733;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1115; --panel: #171a21; --ink: #e8eaee; --muted: #9aa3b2; --line: #262b35;
+  --thr: #3ecf7a; --brk: #ff6b6b; --coast: #f2c14e; --a: #6ea8ff; --b: #ff9a52; --grid: #20242d; --chip: #222733;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
+h1 { font-size: 22px; margin: 0 0 2px; }
+h2 { font-size: 16px; margin: 0 0 12px; }
+.sub { color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-top: 16px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.tile .k { color: var(--muted); font-size: 12px; }
+.tile .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
+.finding { padding: 10px 0; border-top: 1px solid var(--line); }
+.finding:first-of-type { border-top: 0; }
+.finding b { display: block; }
+.tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: var(--chip); color: var(--muted); margin-right: 6px; vertical-align: 1px; }
+.tag.consistency { color: var(--a); } .tag.technique { color: var(--b); }
+svg text { fill: var(--muted); font-size: 11px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+select, button { font: inherit; color: var(--ink); background: var(--chip); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; cursor: pointer; }
+button.on { outline: 2px solid var(--a); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--muted); font-size: 12px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child, td.l, th.l { text-align: left; }
+th { color: var(--muted); font-weight: 500; font-size: 12px; }
+tr.click { cursor: pointer; } tr.click:hover { background: var(--chip); }
+.bad { color: var(--brk); } .good { color: var(--thr); }
+.tyres { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 420px; }
+.tyre { border: 1px solid var(--line); border-radius: 8px; padding: 8px; text-align: center; }
+.tyre .bars { display: flex; gap: 3px; justify-content: center; margin: 6px 0; }
+.tyre .bars div { width: 26px; border-radius: 3px; color: #111; font-size: 11px; padding: 6px 0; }
+#hover { font-size: 12px; color: var(--muted); min-height: 18px; font-variant-numeric: tabular-nums; }
+.note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+.cgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 820px) { .cgrid { grid-template-columns: minmax(0, 1fr); } }
+.cgrid .panel { margin-top: 0; }
+.cgrid h2 { display: flex; align-items: center; gap: 8px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.item { padding: 9px 0; border-top: 1px solid var(--line); } .item:first-of-type { border-top: 0; }
+.item b { display: block; }
+.target { display: inline-block; margin-top: 4px; font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--chip); }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title"></h1>
+  <div class="sub" id="subtitle"></div>
+  <div class="tiles" id="tiles"></div>
+
+  <div id="coaching"></div>
+
+  <div class="panel">
+    <h2>Every issue found, ranked by time cost</h2>
+    <div id="findings"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>Track map, best lap</h2>
+      <div class="legend"><span><i class="sw" style="background:var(--thr)"></i>Full throttle</span><span><i class="sw" style="background:var(--a)"></i>Part throttle</span><span><i class="sw" style="background:var(--coast)"></i>Coasting</span><span><i class="sw" style="background:var(--brk)"></i>Braking</span></div>
+      <svg id="map" viewBox="0 0 400 400" style="width:100%;height:auto;display:block"></svg>
+    </div>
+    <div class="panel">
+      <h2>Lap times</h2>
+      <svg id="laptimes" style="width:100%;display:block"></svg>
+      <h2 style="margin-top:16px">Where the time goes (pedals)</h2>
+      <div id="inputs"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Compare laps</h2>
+    <div class="controls">
+      <span class="sw" style="background:var(--a)"></span><select id="lapA"></select>
+      <span>vs</span>
+      <span class="sw" style="background:var(--b)"></span><select id="lapB"></select>
+      <span class="sub" style="margin-left:8px">Zoom:</span><span id="zoomBtns"></span>
+    </div>
+    <div id="hover"></div>
+    <svg id="traces" style="width:100%;display:block"></svg>
+  </div>
+
+  <div class="panel">
+    <h2>Corner by corner</h2>
+    <div class="tablewrap"><table id="corners"></table></div>
+    <div class="note">Values are your typical (median) pass. "Loss" is how much slower your average pass is than your best pass through that section. Click a row to zoom the traces.</div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>Setup suggestions</h2>
+      <div id="setup"></div>
+    </div>
+    <div class="panel">
+      <h2>Tyres (inside / middle / outside, °C)</h2>
+      <div class="tyres" id="tyres"></div>
+      <div class="note" id="carnote"></div>
+    </div>
+  </div>
+  <div class="note">Balance and wheel lockup detection are estimates from telemetry (steering vs. yaw rate, wheel speed vs. car speed). Use them as hints, and confirm by feel.</div>
+</main>
+<script>
+const DATA = {"summary":{"sessionType":"Race","pedalSource":"raw","file":"2026-10-27_080346_Granja_Viana-GranjaVianaKart101_Kart_4-Stroke_Race.csv","track":"Granja_Viana","variation":"GranjaVianaKart101","car":"Kart 4-Stroke Race","carClass":"KartGX390","trackLength":994,"runs":1,"drivenKm":1.8,"driveMinutes":2,"lapsTotal":2,"lapsComplete":1,"lapsUsed":1,"lapsPartial":1,"usedInvalid":true,"bestLap":{"num":1,"label":"Lap 1","time":64.836,"fmt":"1:04.836","standing":true},"medianLap":{"num":1,"label":"Lap 1","time":64.836,"fmt":"1:04.836"},"theoreticalBest":{"time":59.951,"fmt":"0:59.951","gain":4.885},"consistency":{"stdev":0,"spread":0},"laps":[{"num":1,"label":"Lap 1","time":64.836,"fmt":"1:04.836","partial":false,"standing":true,"invalid":true,"used":true,"stats":{"fullThrottlePct":58.4,"partialPct":25.5,"coastPct":10.1,"brakingPct":6,"absPct":6.5,"topSpeed":79.9,"avgSpeed":56.1,"maxLatG":3.02,"maxBrakeG":0.37,"gearShifts":1,"lockMeters":0,"spinMeters":0}},{"num":2,"label":"Lap 2","time":null,"fmt":"partial, 0-788 m","partial":true,"standing":false,"invalid":false,"used":true,"stats":null}],"corners":[{"name":"T1","kind":"slow","apex":404,"refMin":41.2,"bestSeg":37.335,"avgSeg":37.335,"passes":1,"noData":false,"lossAvg":0,"spread":0,"bestSegLap":"Lap 2","median":{"brakeBeforeApex":86,"peakBrake":1,"timeToPeak":0.37,"minSpeed":37.7,"throttleOnAfterApex":-4,"fullThrottleAfterApex":-4,"coastMeters":8,"absPct":1,"trailMeters":32,"entrySpeed":88.8},"flags":["slow-squeeze","abs"],"balance":{"entry":0.62,"mid":0.81,"exit":1.09},"counter":{"entry":1,"mid":0,"exit":0}},{"name":"T2","kind":"slow","apex":834,"refMin":31.4,"bestSeg":22.616,"avgSeg":22.616,"passes":1,"noData":false,"lossAvg":0,"spread":0,"bestSegLap":"Lap 1","median":{"brakeBeforeApex":44,"peakBrake":1,"timeToPeak":0.36,"minSpeed":25.7,"throttleOnAfterApex":-4,"fullThrottleAfterApex":2,"coastMeters":14,"absPct":1,"trailMeters":20,"entrySpeed":73},"flags":["slow-squeeze","abs","abrupt-release"],"balance":{"entry":0.92,"mid":1.56,"exit":1.05},"counter":{"entry":0,"mid":0,"exit":0}}],"findings":[{"impact":0.08,"corner":"T1","title":"T1: slow to build brake pressure (0.37 s)","detail":"Get to peak pressure in about 0.1-0.2 s. The car has the most grip when it is fastest, so the first part of the braking zone is where to brake hardest.","kind":"technique"},{"impact":0.08,"corner":"T1","title":"T1: ABS active 100% of the braking","detail":"You are braking past the limit and letting ABS manage it. Ease off slightly once ABS starts, especially as you start turning in.","kind":"technique"},{"impact":0.08,"corner":"T2","title":"T2: slow to build brake pressure (0.36 s)","detail":"Get to peak pressure in about 0.1-0.2 s. The car has the most grip when it is fastest, so the first part of the braking zone is where to brake hardest.","kind":"technique"},{"impact":0.08,"corner":"T2","title":"T2: ABS active 100% of the braking","detail":"You are braking past the limit and letting ABS manage it. Ease off slightly once ABS starts, especially as you start turning in.","kind":"technique"},{"impact":0.06,"corner":"T2","title":"T2: brake released abruptly while turning","detail":"Snapping off the brake while turning unloads the front tyres and causes entry understeer. Trail off the brake gradually toward the apex.","kind":"technique"}],"setup":[{"area":"Balance","title":"Understeer on corner entry","detail":"Try trail braking deeper first (a driving fix). Setup options: move brake bias 1% rearward, soften front bump/rebound damping, or soften the front bar."},{"area":"Tyres","title":"FL: inside only 0.1°C hotter than outside","detail":"Not enough negative camber; the outside edge is working too hard. Add about 0.2-0.3° negative camber."},{"area":"Tyres","title":"FR: inside only 0.1°C hotter than outside","detail":"Not enough negative camber; the outside edge is working too hard. Add about 0.2-0.3° negative camber."},{"area":"Tyres","title":"RL: inside only -0.2°C hotter than outside","detail":"Not enough negative camber; the outside edge is working too hard. Add about 0.2-0.3° negative camber."},{"area":"Tyres","title":"RR: inside only -0.1°C hotter than outside","detail":"Not enough negative camber; the outside edge is working too hard. Add about 0.2-0.3° negative camber."},{"area":"Suspension","title":"Front ride height under 1 cm for 47.4% of the time at speed","detail":"The car is probably touching the ground. Low-downforce cars should not do this; for high-downforce cars some is normal. If the car feels nervous over bumps, kerbs or in fast corners, raise ride height a few mm or stiffen springs/bump stops on that axle."},{"area":"Suspension","title":"Rear ride height under 1 cm for 58.9% of the time at speed","detail":"The car is probably touching the ground. Low-downforce cars should not do this; for high-downforce cars some is normal. If the car feels nervous over bumps, kerbs or in fast corners, raise ride height a few mm or stiffen springs/bump stops on that axle."}],"balance":{"understeer":{"entry":1,"mid":0,"exit":0},"oversteer":{"entry":0,"mid":0,"exit":0},"corners":2},"carData":{"tyres":{"FL":{"inner":54.7,"middle":55,"outer":54.6,"avg":54.8,"psi":18.4,"minRide":0.01,"lowRidePct":47.4,"maxBrakeTemp":43},"FR":{"inner":53.7,"middle":53.9,"outer":53.6,"avg":53.7,"psi":18.4,"minRide":0.01,"lowRidePct":24,"maxBrakeTemp":42},"RL":{"inner":53.4,"middle":53.6,"outer":53.6,"avg":53.5,"psi":19.3,"minRide":0.01,"lowRidePct":58.9,"maxBrakeTemp":41},"RR":{"inner":52,"middle":52.1,"outer":52.1,"avg":52.1,"psi":19.3,"minRide":0.01,"lowRidePct":42.4,"maxBrakeTemp":37}},"pressureUnit":"psi","absSetting":0,"tcSetting":0,"brakeBias":100},"analyzerVersion":6,"coaching":{"carType":"other","pros":[{"title":"You commit to the brake pedal in 2 of 2 braking zones","detail":"You hit 90-100% brake pressure in T1, T2. Many newer drivers never press hard enough; you do, and that's the foundation of late braking."},{"title":"You get back on the throttle at the slowest point in 2 corners","detail":"Picking up the throttle at the apex (not after it) is good timing. The problem is what happens just before that point; see weaknesses."},{"title":"58.4% of the lap at full throttle","detail":"Strong commitment on the straights and exits for this track."},{"title":"Very few locked wheels","detail":"You are not flat-spotting tyres under braking."}],"cons":[{"title":"Coasting: 10.1% of the lap with neither pedal pressed","corners":"","detail":"About 0 m per lap in . You come off the brake, roll, and only then pick up the throttle. The car is slowing with nothing controlling its balance, so you lose time and the front goes light before the apex."},{"title":"Braking into ABS in 2 corners","corners":"T1, T2","detail":"In T1, T2 ABS is active for 100% of the zone at worst. ABS is a safety net; leaning on it lengthens your stops and hides where the real limit is."},{"title":"Slow to build brake pressure (T1, T2)","corners":"T1, T2","detail":"It takes you 0.37 s / 0.36 s to reach peak. Aim for 0.1-0.2 s."},{"title":"Brake released abruptly while turning (T2)","corners":"T2","detail":"Snapping off the brake mid-turn-in unloads the front tyres and causes understeer at the apex."}],"improve":[{"title":"Connect the brake to the throttle","target":"Coasting under 8% of the lap, and under 10 m in any corner","how":"Keep 10-20% brake on as you turn in and hold it until the slowest point, then go straight to a light throttle. No gap between the pedals. Practice only this for 5 laps, starting with ."},{"title":"Threshold braking: hard first, then bleed off","target":"ABS active less than 20% of each braking zone","how":"Hit the brake hard first, and the moment ABS starts working, ease off 5-10% instead of holding the pedal down."}],"stopDoing":[{"title":"Letting go of both pedals between braking and the apex","detail":"Every metre without a pedal is time you are not using."},{"title":"Holding the brake pedal flat and letting ABS do the work","detail":"Ease off as soon as you feel ABS chatter or see the ABS light."},{"title":"Snapping off the brake with the wheel turned","detail":"Release it gradually over the last 20-30 m before the apex."}],"hud":{"show":[{"item":"Live delta to your best lap","why":"The single most useful number. It turns green/red within a corner, so you instantly know whether a change you just tried worked."},{"item":"Pedal input bars (throttle + brake)","why":"Keep these on while you fix coasting (10.1% now): you'll see the gap between the red and green bars. Remove once it's under 8%."},{"item":"Gear and shift lights","why":"Your ES wheel already has RPM LEDs, so you don't need to look at the HUD for shifts. Keep the gear number visible."},{"item":"Last lap and best lap times","why":"Glance on the main straight only."},{"item":"Tyre temperatures (simple colour view)","why":"Check after a few laps to see if you are overheating one end."}],"hide":[{"item":"Full standings / timing tower in practice","why":"Irrelevant when you are learning. Use the relative (gap to cars around you) only in races."},{"item":"Track map","why":"Useful for your first laps on a new track. After that, learn the track by real reference points instead."},{"item":"Speed readout mid-corner","why":"Never read numbers in a corner. Look through the corner to the apex and exit; read the HUD only on straights."},{"item":"Engine temps, fuel detail, damage","why":"Only matter in long races. Hide them in practice to reduce clutter."}]},"settings":["Let AMS2 set steering lock for each car, and watch the FFB meter for clipping."]},"calibration":{"radius":{"FL":0.020797983684325297,"FR":0.020769914064380696,"RL":0.021943837675904278,"RR":0.021943837675904278},"steerYawSign":-1,"neutralGain":0.19413465510119787,"latAxis":"ax"}},"traces":{"1":{"d":[0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64,68,72,76,80,84,88,92,96,100,104,108,112,116,120,124,128,132,136,140,144,148,152,156,160,164,168,172,176,180,184,188,192,196,200,204,208,212,216,220,224,228,232,236,240,244,248,252,256,260,264,268,272,276,280,284,288,292,296,300,304,308,312,316,320,324,328,332,336,340,344,348,352,356,360,364,368,372,376,380,384,388,392,396,400,404,408,412,416,420,424,428,432,436,440,444,448,452,456,460,464,468,472,476,480,484,488,492,496,500,504,508,512,516,520,524,528,532,536,540,544,548,552,556,560,564,568,572,576,580,584,588,592,596,600,604,608,612,616,620,624,628,632,636,640,644,648,652,656,660,664,668,672,676,680,684,688,692,696,700,704,708,712,716,720,724,728,732,736,740,744,748,752,756,760,764,768,772,776,780,784,788,792,796,800,804,808,812,816,820,824,828,832,836,840,844,848,852,856,860,864,868,872,876,880,884,888,892,896,900,904,908,912,916,920,924,928,932,936,940,944,948,952,956,960,964,968,972,976,980,984,988,992],"t":[0,2.631,3.234,3.736,4.174,4.574,4.942,5.284,5.607,5.915,6.208,6.498,6.767,7.034,7.298,7.547,7.794,8.034,8.271,8.506,8.747,9.002,9.255,9.5,9.737,9.95,10.161,10.376,10.603,10.862,11.12,11.387,11.629,11.866,12.079,12.276,12.469,12.682,12.893,13.114,13.331,13.544,13.766,13.989,14.21,14.444,14.695,14.941,15.186,15.423,15.655,15.889,16.118,16.343,16.561,16.774,16.991,17.196,17.397,17.601,17.8,17.997,18.192,18.383,18.575,18.762,18.949,19.142,19.327,19.518,19.703,19.888,20.067,20.241,20.414,20.595,20.775,20.958,21.138,21.324,21.515,21.706,21.904,22.104,22.318,22.529,22.723,22.925,23.135,23.352,23.596,23.886,24.263,24.689,25.106,25.487,25.823,26.132,26.407,26.661,26.917,27.216,27.557,27.923,28.264,28.598,28.902,29.196,29.483,29.751,30.014,30.26,30.501,30.721,30.949,31.205,31.492,31.794,32.084,32.368,32.648,32.916,33.156,33.369,33.562,33.791,34.07,34.412,34.821,35.221,35.604,35.953,36.279,36.588,36.888,37.171,37.454,37.724,37.994,38.263,38.532,38.783,39.023,39.254,39.506,39.775,40.049,40.313,40.574,40.824,41.069,41.309,41.551,41.784,42.01,42.24,42.464,42.684,42.901,43.119,43.334,43.546,43.749,43.957,44.164,44.369,44.574,44.779,44.984,45.189,45.394,45.597,45.794,45.994,46.187,46.382,46.566,46.753,46.934,47.128,47.321,47.512,47.712,47.906,48.109,48.316,48.526,48.739,48.949,49.153,49.347,49.533,49.727,49.942,50.164,50.386,50.614,50.842,51.075,51.314,51.564,51.808,52.04,52.274,52.503,52.771,53.132,53.624,54.2,54.712,55.201,55.645,56.052,56.415,56.743,57.06,57.369,57.667,57.961,58.247,58.53,58.812,59.089,59.364,59.621,59.859,60.093,60.316,60.526,60.752,60.98,61.214,61.441,61.669,61.901,62.136,62.358,62.581,62.796,63.007,63.214,63.418,63.618,63.815,64.01,64.202,64.39,64.582,64.764],"speed":[0,21.393,26.63,30.943,34.63,37.88,40.79,43.43,45.81,47.99,49.957,51.82,53.53,55.21,56.73,58.173,59.51,60.58,61.32,60.95,60.155,59.05,57.7,56.543,55.575,54.957,55.43,54.93,54.045,54.775,55.88,57.59,59.373,60.86,61.81,62.32,62.84,63.663,64.647,65.74,66.853,67.365,66.293,64.9,63.637,61.917,60.547,60.933,61.437,62.57,63.96,65.07,65.9,66.687,67.685,68.75,69.69,70.528,71.323,72.125,72.915,73.67,74.41,75.095,75.689,76.18,76.64,77.085,77.42,77.605,77.723,77.798,77.97,78.21,78.53,78.97,79.56,79.767,78.795,77.64,76.258,74.432,72.73,70.653,68.41,66.05,63.658,61.03,58.45,55.63,52.355,48.897,45.09,42.5,42.45,43.68,45.31,45.317,44.056,42.57,41.55,39.12,39.855,41.925,43.94,45.885,47.672,49.53,51.175,52.177,52.88,53.363,53.96,54.333,54.36,54.967,55.08,54.54,53.24,52.29,52.023,51.15,50.505,51.05,51.32,50.003,47.33,44.7,43.86,42.85,43.4,45.095,46.705,48.278,49.765,51.12,52.46,53.643,54.616,54.98,55.273,55.13,53.95,51.92,51.6,52.35,53.8,55.293,56.7,57.98,59.13,60.193,61.18,62.14,63.057,63.93,64.8,65.585,66.35,67.088,67.81,68.56,69.23,69.95,70.68,71.413,72.12,72.65,72.89,72.98,72.8,72.404,71.676,71.17,70.87,70.87,71.55,71.89,71.238,70.44,70.49,70.74,71.03,71.403,71.492,70.837,69.577,68.41,68.008,67.223,66.44,66.043,65.463,64.39,63.47,63.247,63.68,62.787,61.113,59.13,56.885,54.4,52.175,50.14,47.632,42.72,34.11,25.7,28.88,31.473,34.04,36.607,39.13,41.42,43.327,45.02,46.46,47.753,48.93,50.007,50.99,52.007,52.707,53.02,53.04,53.303,53.482,54.063,55.03,56.23,57.4,58.6,59.903,61.273,62.65,63.983,65.327,66.64,67.876,69.07,70.24,71.375,72.417,73.45,74.473,75.463,76.477,77.55,78.565],"thr":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0.927,0.801,0.6,0,0,0,0,0,0,0.643,0.739,0,0.516,1,0.996,0.995,0.993,0.964,0.981,0.991,0.99,0.988,0.985,0.978,0.858,0.321,0.073,0.136,0.439,0,0.887,1,1,1,1,1,1,1,1,1,1,0.985,0.99,0.989,0.988,0.988,0.986,0.941,0.915,0.852,0.846,0.846,0.846,0.847,0.848,0.848,0.849,0.851,0.877,0.918,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.95,0.988,0.935,0.701,0,0,0.691,0.856,0.847,1,1,1,1,1,0.986,0.997,0.949,0.95,0.95,0.952,0.714,0.931,0.966,0.916,0.838,0.8,0.383,0,0.036,0.423,0.95,0.702,0,0.081,0.907,0.922,0.999,1,1,1,1,1,1,1,0.962,0.933,0.788,0.68,0.423,0.294,0.151,0.915,1,1,1,0.996,0.983,0.978,0.977,0.976,0.975,0.975,0.975,0.971,0.966,0.964,0.964,0.965,0.965,0.965,0.962,0.956,0.946,0.941,0.867,0.839,0.84,0.837,0.836,0.829,0.829,0.736,0.716,0.564,0.073,0,0.826,0.98,0.923,0.701,0.46,0.086,0,0,1,1,0.969,0.961,0.961,0.959,0.961,0.959,0.951,0.827,0,0,0,0,0,0,0,0,0,0.683,0.855,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"brk":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.569,0.732,0.773,0.786,0.773,0.77,0.783,0.782,0.749,0.722,0.678,0.667,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.601,0.957,1,0.988,0.598,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"steer":[0.02,0.01,-0.085,-0.015,-0.02,-0.012,-0.034,-0.012,-0.004,0.005,0.004,-0.055,-0.025,0.029,0.043,0.035,0.038,0.05,0.058,0.069,0.159,0.257,0.245,0.237,0.242,0.253,0.256,0.278,0.294,0.253,0.14,0.031,-0.001,-0.183,-0.231,-0.25,-0.165,-0.119,-0.117,-0.082,0.023,0.209,0.282,0.27,0.276,0.27,0.26,0.214,0.09,0.006,0.066,0.142,0.114,0.08,0.017,0.042,0.064,-0.004,-0.013,0.015,0.034,0.016,-0.009,-0.002,0.017,0.017,0.034,0.067,0.099,0.1,0.109,0.088,0.071,0.058,0.046,0.03,0.031,0.072,0.082,0.079,0.11,0.15,0.185,0.196,0.201,0.254,0.301,0.326,0.324,0.35,0.421,0.445,0.489,0.466,0.364,0.11,0.041,-0.299,-0.429,-0.529,-0.565,-0.393,-0.304,-0.182,-0.199,-0.185,-0.063,0.068,0.221,0.278,0.283,0.276,0.291,0.336,0.332,0.339,0.365,0.362,0.238,-0.017,-0.268,-0.234,-0.256,-0.292,-0.341,-0.422,-0.497,-0.475,-0.463,-0.355,-0.167,-0.14,-0.062,-0.009,0.001,-0.006,-0.023,-0.083,-0.197,-0.18,-0.159,-0.282,-0.352,-0.3,-0.216,-0.073,-0.031,-0.021,-0.01,-0.008,-0.034,-0.047,-0.018,-0.009,-0.003,0.012,0.02,0.018,0.005,0.004,-0.007,-0.04,-0.034,-0.011,-0.022,-0.031,-0.069,-0.115,-0.135,-0.176,-0.239,-0.243,-0.237,-0.171,-0.064,-0.009,0.01,-0.143,-0.26,-0.261,-0.196,-0.122,-0.066,-0.02,0.081,0.21,0.301,0.287,0.298,0.292,0.285,0.309,0.343,0.301,0.167,0.03,0.01,0.095,0.126,0.193,0.244,0.286,0.292,0.356,0.424,0.377,0.072,-0.094,-0.335,-0.374,-0.253,-0.231,-0.113,-0.118,-0.037,-0.065,-0.03,-0.017,-0.031,-0.054,-0.016,0.097,0.227,0.219,0.213,0.2,0.179,0.095,0.083,0.123,0.121,0.076,0.047,0.06,0.069,0.031,-0.011,0.004,0.023,0.028,0.014,0.011,0.03,0.031,0.028,0.017,-0.009,-0.028,-0.012],"gear":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],"abs":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"x":[-3.99,-1.877,-0.7,0.67,2.11,3.6,5.14,6.76,8.4,10.09,11.747,13.413,15.16,17.05,18.883,20.573,22.16,23.63,24.963,26.1,27.06,27.62,27.513,26.723,25.375,23.68,21.61,19.12,16.225,12.635,8.68,4.52,0.54,-3.265,-6.95,-10.347,-13.65,-17.03,-20.333,-23.63,-26.763,-29.8,-33.093,-36.61,-40.393,-44.403,-48.59,-52.623,-56.37,-59.68,-62.82,-65.89,-68.723,-71.173,-73.3,-75.19,-76.98,-78.562,-80.047,-81.555,-83.045,-84.47,-85.83,-87.15,-88.481,-89.787,-91.05,-92.27,-93.28,-94.1,-94.573,-94.71,-94.515,-94.05,-93.34,-92.419,-91.34,-90.113,-88.695,-87.055,-85.202,-83.092,-80.7,-77.913,-74.77,-71.43,-68.185,-64.807,-61.33,-57.93,-54.52,-51.153,-48.325,-47.47,-48.96,-52.115,-55.54,-58.883,-61.434,-63.197,-64.16,-64.1,-62.53,-59.77,-56.57,-52.975,-49.238,-45.43,-41.64,-38.16,-35.07,-32.683,-30.88,-29.77,-29.28,-29.567,-30.91,-33.47,-36.83,-40.662,-44.603,-48.187,-51.16,-53.54,-55.46,-57.243,-58.44,-58.41,-56.32,-52.59,-48.16,-43.852,-39.785,-35.798,-31.86,-28.04,-24.11,-20.283,-16.452,-12.77,-9.397,-6.61,-4.42,-3.01,-2.29,-2.3,-2.82,-3.517,-4.31,-5.13,-5.995,-6.927,-8,-9.18,-10.38,-11.62,-12.86,-14.005,-15.11,-16.205,-17.26,-18.313,-19.42,-20.68,-22.015,-23.423,-24.94,-26.628,-28.605,-30.932,-33.6,-36.646,-39.95,-43.465,-47.05,-50.802,-54.45,-58.1,-61.78,-65.505,-69.15,-72.59,-75.93,-79.003,-82.076,-85.283,-88.723,-92.38,-96.248,-100.013,-103.6,-106.933,-110.18,-113.38,-116.1,-118.177,-119.89,-121.44,-122.83,-123.86,-124.405,-124.32,-123.64,-122.37,-120.63,-118.1,-114.52,-110.96,-108.4,-105.037,-100.86,-96.533,-92.29,-88.347,-84.617,-80.97,-77.4,-73.807,-70.27,-66.767,-63.32,-59.873,-56.27,-52.447,-48.71,-45.21,-41.87,-38.853,-36.16,-33.413,-30.74,-28.22,-25.91,-23.667,-21.5,-19.497,-17.647,-15.8,-13.996,-12.223,-10.55,-8.945,-7.393,-5.91,-4.523,-3.24,-2.047,-0.88,0.325],"z":[4.41,-2.58,-6.41,-10.18,-13.895,-17.62,-21.34,-25.03,-28.64,-32.33,-35.973,-39.613,-43.18,-46.79,-50.42,-54.033,-57.72,-61.47,-65.272,-69.05,-73.045,-77.175,-81.293,-85.083,-88.465,-91.3,-93.78,-95.98,-97.77,-99.155,-99.79,-99.72,-99.37,-99.015,-98.96,-99.327,-100.17,-101.54,-103.357,-105.6,-108.143,-110.76,-113.173,-115.03,-116.303,-116.893,-116.66,-115.633,-113.82,-111.46,-108.84,-106.03,-102.97,-99.673,-96.135,-92.58,-88.88,-85.205,-81.5,-77.76,-74.035,-70.283,-66.49,-62.75,-58.979,-55.223,-51.44,-47.52,-43.7,-39.675,-35.697,-31.69,-27.835,-24.05,-20.31,-16.497,-12.7,-8.913,-5.107,-1.4,2.135,5.583,8.78,11.723,14.273,16.32,17.725,18.573,18.81,18.43,17.25,14.937,11.005,6.02,1.35,-1.88,-4.17,-6.29,-8.52,-11.01,-13.8,-17.1,-20.435,-23.56,-26.11,-28.13,-29.566,-30.67,-31.885,-33.54,-35.82,-38.497,-41.56,-44.723,-48.1,-51.983,-56.08,-59.91,-62.66,-64.267,-65.16,-66.397,-68.02,-69.82,-71.81,-74.53,-78.03,-82.39,-86.93,-89.845,-90.82,-90.607,-89.89,-88.904,-87.87,-86.86,-85.82,-84.73,-83.404,-81.61,-79.233,-76.627,-73.73,-70.6,-67.1,-63.252,-59.28,-55.317,-51.33,-47.44,-43.51,-39.64,-35.79,-31.94,-28.17,-24.355,-20.48,-16.715,-12.89,-8.937,-5.08,-1.253,2.51,6.33,10.135,13.927,17.72,21.455,25.085,28.525,31.64,34.378,36.602,38.32,39.52,40.228,40.517,40.67,40.638,40.2,39.25,37.77,35.76,33.453,30.888,28.323,26.08,24.38,23.297,22.94,23.23,24.06,25.47,27.66,30.52,33.817,37.46,41.1,44.88,48.72,52.685,56.48,59.8,62.897,65.427,67.55,68.78,67.41,63.9,61.257,59.77,59.403,59.85,60.73,61.913,63.25,64.74,66.39,68.09,69.87,71.8,73.817,75.657,76.9,77.35,77.1,76.244,74.89,73.17,71.043,68.6,65.85,62.913,59.76,56.377,52.857,49.3,45.64,42.047,38.407,34.77,31.115,27.438,23.73,19.96,16.17,12.361,8.52,4.695]},"2":{"d":[0,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64,68,72,76,80,84,88,92,96,100,104,108,112,116,120,124,128,132,136,140,144,148,152,156,160,164,168,172,176,180,184,188,192,196,200,204,208,212,216,220,224,228,232,236,240,244,248,252,256,260,264,268,272,276,280,284,288,292,296,300,304,308,312,316,320,324,328,332,336,340,344,348,352,356,360,364,368,372,376,380,384,388,392,396,400,404,408,412,416,420,424,428,432,436,440,444,448,452,456,460,464,468,472,476,480,484,488,492,496,500,504,508,512,516,520,524,528,532,536,540,544,548,552,556,560,564,568,572,576,580,584,588,592,596,600,604,608,612,616,620,624,628,632,636,640,644,648,652,656,660,664,668,672,676,680,684,688,692,696,700,704,708,712,716,720,724,728,732,736,740,744,748,752,756,760,764,768,772,776,780,784,788,792,796,800,804,808,812,816,820,824,828,832,836,840,844,848,852,856,860,864,868,872,876,880,884,888,892,896,900,904,908,912,916,920,924,928,932,936,940,944,948,952,956,960,964,968,972,976,980,984,988,992],"t":[0.038,0.214,0.389,0.568,0.739,0.915,1.078,1.252,1.415,1.584,1.748,1.911,2.076,2.235,2.403,2.573,2.738,2.918,3.098,3.278,3.473,3.669,3.87,4.069,4.275,4.487,4.72,4.981,5.283,5.584,5.876,6.158,6.434,6.689,6.935,7.159,7.377,7.594,7.827,8.074,8.318,8.557,8.777,8.986,9.188,9.386,9.596,9.814,10.031,10.254,10.471,10.688,10.903,11.118,11.338,11.546,11.745,11.948,12.146,12.345,12.539,12.73,12.919,13.111,13.294,13.475,13.665,13.848,14.027,14.211,14.392,14.572,14.744,14.909,15.073,15.239,15.407,15.584,15.758,15.931,16.112,16.295,16.481,16.672,16.862,17.054,17.254,17.461,17.689,17.948,18.248,18.619,19.044,19.484,19.895,20.253,20.586,20.898,21.176,21.405,21.615,21.88,22.213,22.578,22.908,23.235,23.527,23.82,24.098,24.385,24.664,24.939,25.206,25.461,25.694,25.936,26.204,26.498,26.796,27.088,27.367,27.643,27.905,28.131,28.353,28.595,28.888,29.255,29.67,30.073,30.463,30.818,31.155,31.473,31.778,32.072,32.365,32.647,32.923,33.185,33.452,33.708,33.948,34.192,34.466,34.758,35.057,35.346,35.622,35.891,36.152,36.405,36.657,36.898,37.14,37.373,37.611,37.85,38.093,38.341,38.588,38.828,39.058,39.311,39.568,39.855,40.158,40.439,40.689,40.938,41.182,41.418,41.665,41.905,42.146,42.384,42.618,42.853,43.073,43.298,43.515,43.731,43.944,44.152,44.361,44.577,44.788,45.012,45.228,45.438,45.638,45.843,46.066,46.33,46.658,47.026,47.45,50.126,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"speed":[79.17,80.18,81.195,82.17,83.1,84.01,84.89,85.694,86.453,87.124,87.74,88.345,88.788,88.14,86.648,84.79,82.56,80.843,79.18,77.35,76.05,74.735,73.158,71.58,69.58,67.107,64.14,61.123,57.86,55.48,53.04,52.41,53.53,53.317,53.57,54.635,55.74,56.65,58.03,59.703,61.35,62.9,64.14,64.81,64.66,64.09,63.443,63.573,64.49,65.75,66.92,67.77,68.54,69.26,70.01,70.8,71.64,72.44,73.21,73.984,74.77,75.55,76.273,76.977,77.635,78.295,78.98,79.47,79.73,79.85,79.925,80.14,80.645,81.242,81.74,82.08,82.175,82.194,82.02,80.887,79.49,77.885,76.42,74.57,72.085,69.147,65.577,61.85,58.24,54.142,49.635,44.92,40.27,37.675,39.635,42.27,44.587,46.74,47.31,45.83,44.36,41.995,42.71,43.53,44.6,46.71,48.64,50.457,51.95,50.71,49.88,49.12,48.217,48.84,49.23,49.37,49.22,47.608,48.165,49.83,51.75,52.995,53.89,54.48,53.77,52.112,49.35,45.99,43.49,41.02,42.38,44.3,45.765,47.27,48.74,50.095,51.4,52.05,52.555,52.627,50.942,48.88,46.605,46.742,47.615,48.83,50.295,51.89,53.38,54.8,56.087,57.307,58.463,59.56,60.59,61.1,61.217,60.96,60.68,60.83,60.83,60.21,59.79,58.45,57.85,56.99,57.48,58.437,59.473,52.39,52.927,54.11,55.053,56.03,57.12,58.26,59.54,60.643,61.62,62.54,63.34,64.37,65.675,67.215,68.657,69.725,70.03,69.51,68.307,66.88,65.99,62.75,57.41,49.773,40.5,36.84,33.737,0.84,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"thr":[1,1,1,1,1,1,1,1,1,1,1,1,0.496,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0.994,0.996,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0.549,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,0.124,0,0,0.756,1,1,1,1,1,1,0.915,0,0.652,0,0.853,0.73,0.838,0.772,0.083,0.82,0.933,0.959,0.998,0.998,0.994,0.304,0,0,0.47,0.635,0.466,0.948,1,1,1,1,1,0.989,0.964,0.643,0.645,0.35,0,0,0.252,0.962,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0.996,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"brk":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.791,0.697,0.736,0.748,0.753,0.52,0.547,0.67,0.689,0.696,0.677,0.433,0.021,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.78,0.887,0.99,1,1,1,1,0.916,0.533,0.073,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"steer":[0.001,0.012,0.002,-0.011,-0.01,-0.004,-0.002,-0.003,0,0.006,0.012,0.004,-0.002,-0.005,-0.001,0.007,0.018,0.029,0.021,0.049,0.112,0.174,0.19,0.241,0.341,0.447,0.494,0.499,0.508,0.456,0.203,-0.3,-0.415,-0.286,-0.126,-0.122,-0.143,-0.039,-0.004,-0.026,0.025,0.085,0.222,0.297,0.287,0.203,0.056,0.089,0.071,0.077,0.13,0.121,0.116,0.11,0.076,0.049,0.043,0.027,0.017,-0.004,0.01,0.004,-0.013,-0.017,-0.005,0.027,0.076,0.134,0.124,0.112,0.083,0.034,0.006,0.023,0.043,0.089,0.115,0.073,0.011,-0.009,0.019,0.047,0.131,0.248,0.336,0.412,0.468,0.513,0.561,0.57,0.601,0.666,0.701,0.329,-0.093,0.043,0.011,-0.186,-0.35,-0.393,-0.397,-0.383,-0.374,-0.379,-0.109,-0.019,-0.138,0.068,0.31,0.335,0.337,0.336,0.311,0.329,0.33,0.338,0.396,0.392,0.11,-0.009,-0.269,-0.282,-0.226,-0.246,-0.326,-0.461,-0.521,-0.529,-0.528,-0.296,-0.096,-0.154,-0.168,-0.068,-0.119,0.006,0.139,0.054,-0.011,-0.245,-0.375,-0.388,-0.305,-0.29,-0.173,-0.189,-0.09,-0.054,-0.052,-0.039,-0.049,-0.047,0.005,0.038,0.011,-0.028,-0.089,-0.153,-0.197,-0.218,-0.172,-0.16,-0.07,0.036,0.11,0.176,0.129,0.077,0.118,0.039,-0.02,-0.16,-0.204,-0.207,-0.202,-0.213,-0.207,-0.207,-0.205,-0.203,-0.183,-0.119,0.019,0.016,0.093,0.246,0.336,0.332,0.34,0.318,0.323,0.334,0.192,0.085,-0.316,-0.818,-0.662,-0.003,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"gear":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"abs":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"x":[1.06,2.27,3.55,4.84,6.09,7.41,8.74,10.098,11.455,12.829,14.17,15.52,16.844,18.138,19.47,20.79,22.09,23.383,24.6,25.72,26.75,27.543,27.953,27.86,27.21,25.947,23.823,20.78,16.59,12.1,7.75,3.92,0.36,-3.303,-6.92,-10.225,-13.405,-16.59,-19.835,-23.307,-26.82,-30.275,-33.72,-37.14,-40.6,-44.18,-47.903,-51.57,-55.11,-58.61,-61.93,-65.12,-68.08,-70.81,-73.23,-75.26,-77.01,-78.6,-80.09,-81.489,-82.837,-84.18,-85.49,-86.84,-88.202,-89.595,-91.03,-92.29,-93.273,-93.933,-94.18,-94.045,-93.633,-93.046,-92.38,-91.64,-90.685,-89.434,-87.86,-85.963,-83.905,-81.772,-79.56,-77.15,-74.465,-71.523,-68.297,-64.89,-61.14,-57.132,-53.04,-49.355,-47.34,-48.135,-50.97,-53.74,-56.535,-59.37,-61.597,-62.95,-63.657,-63.765,-62.57,-59.955,-56.57,-52.81,-49.08,-45.183,-41.34,-37.71,-34.638,-32.273,-30.737,-30.015,-29.97,-30.62,-32.18,-34.706,-38,-41.71,-45.473,-49.085,-52.1,-54.503,-56.6,-58.433,-59.58,-59.22,-56.605,-52.653,-48.23,-43.9,-39.795,-35.89,-32.04,-28.42,-24.79,-20.99,-17.205,-13.523,-10.082,-7.27,-5.265,-3.846,-2.79,-2.22,-2.24,-2.665,-3.305,-4.11,-5.057,-6.133,-7.36,-8.64,-9.813,-10.937,-11.93,-12.7,-13.23,-13.49,-13.84,-14.61,-15.83,-17.67,-20.06,-23.18,-27.17,-30.627,-33.55,-35.48,-37.207,-39.07,-41.323,-44.02,-47.16,-50.677,-54.41,-58.223,-61.977,-65.7,-69.19,-72.46,-75.435,-78.355,-81.323,-84.528,-88.05,-92,-96.007,-99.98,-103.69,-107.168,-110.64,-113.94,-116.62,-118.04,-120.367,-125.83,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],"z":[2.44,-1.15,-4.93,-8.75,-12.46,-16.26,-20.02,-23.812,-27.575,-31.349,-35.06,-38.827,-42.634,-46.367,-50.215,-53.99,-57.73,-61.55,-65.385,-69.19,-73.145,-77.165,-81.255,-85.26,-89.25,-92.997,-96.71,-100.03,-102.76,-104.02,-103.74,-102.21,-100.33,-99.33,-99.29,-99.88,-100.825,-102.137,-103.83,-105.897,-108.07,-110.175,-112.065,-113.5,-114.42,-114.81,-114.543,-113.63,-112.133,-110.17,-107.97,-105.44,-102.61,-99.49,-96.07,-92.54,-88.96,-85.28,-81.52,-77.736,-73.98,-70.19,-66.43,-62.615,-58.885,-55.183,-51.33,-47.54,-43.637,-39.627,-35.6,-31.625,-27.843,-24.138,-20.51,-16.84,-13.075,-9.312,-5.65,-2.133,1.26,4.638,7.947,11.127,13.97,16.34,18.203,19.437,20.023,19.842,18.45,15.41,10.9,6.33,3.017,0.09,-2.792,-5.68,-8.483,-11.12,-13.67,-16.795,-20.48,-23.995,-26.19,-27.71,-29,-30.05,-31.16,-32.9,-35.26,-38.2,-41.467,-44.775,-47.955,-51.2,-54.5,-57.518,-59.68,-61.03,-62.263,-64.065,-66.44,-68.887,-71.42,-74.525,-78.42,-83.21,-87.65,-90.05,-90.61,-90.44,-89.8,-88.62,-87.13,-85.385,-83.545,-82.015,-80.78,-79.563,-77.97,-75.83,-73.325,-70.504,-67.12,-63.23,-59.095,-55.045,-51.047,-47.12,-43.163,-39.333,-35.527,-31.73,-27.963,-24.15,-20.243,-16.29,-12.27,-8.01,-3.943,0.01,3.69,7.36,10.76,13.98,16.89,19.693,22.557,25.59,28.68,31.7,34.63,37.17,39.24,40.78,41.71,42.03,41.763,40.91,39.49,37.51,35.17,32.602,29.983,27.412,25.19,23.487,22.537,22.36,22.76,23.622,25.04,27.18,30.24,33.86,37.263,39.21,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]}}};
+const S = DATA.summary, T = DATA.traces;
+const $ = id => document.getElementById(id);
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = t => { if (!(t > 0)) return '-'; const m = Math.floor(t / 60); return m + ':' + (t - m * 60).toFixed(3).padStart(6, '0'); };
+const nf = (v, d = 0) => (v === null || v === undefined || !isFinite(v)) ? '-' : (+v).toFixed(d);
+
+const pretty = s => String(s || '').replace(/_/g, ' ').trim();
+const trackName = pretty(S.track) + (S.variation && S.variation !== S.track ? ' · ' + pretty(S.variation) : '');
+$('title').textContent = trackName;
+$('subtitle').textContent = `${S.car}${S.carClass ? ' (' + S.carClass + ')' : ''} · ${S.lapsComplete} complete laps, ${S.lapsPartial || 0} partial, ${S.runs || 1} run(s)${S.usedInvalid ? ' (all were invalid)' : ''} · ${S.file}`;
+document.title = `${pretty(S.track)} · ${S.bestLap.fmt}`;
+
+const best = S.laps.find(l => l.num === S.bestLap.num);
+[['Best lap', S.bestLap.fmt, S.bestLap.label + (S.bestLap.standing ? ' · standing start' : '')], ['Typical lap', S.medianLap.fmt, 'median'],
+ ['Theoretical best', S.theoreticalBest.fmt, `${S.theoreticalBest.gain.toFixed(2)} s available`],
+ ['Consistency', '±' + S.consistency.stdev.toFixed(2) + ' s', 'lap time std dev'],
+ ['Full throttle', best.stats.fullThrottlePct + '%', 'of best lap'], ['Coasting', best.stats.coastPct + '%', 'of best lap'],
+ ['ABS active', best.stats.absPct + '%', 'of best lap'], ['Top speed', nf(best.stats.topSpeed) + ' km/h', 'max lat ' + best.stats.maxLatG + ' g']]
+  .forEach(([k, v, s]) => $('tiles').insertAdjacentHTML('beforeend', `<div class="tile"><div class="k">${k}</div><div class="v">${esc(v)}</div><div class="k">${esc(s)}</div></div>`));
+
+// ---- coaching summary ----
+(function coaching() {
+  const C = S.coaching; if (!C) return;
+  const items = (list, body) => list.map(x => `<div class="item"><b>${esc(x.title)}</b><span class="sub">${esc(body(x))}</span>${x.target ? `<div class="target">Target: ${esc(x.target)}</div>` : ''}</div>`).join('');
+  const card = (color, title, inner) => `<div class="panel"><h2><span class="dot" style="background:var(${color})"></span>${title}</h2>${inner}</div>`;
+  const typeName = { formula: 'formula car', gt: 'GT car', other: 'car' }[C.carType];
+  $('coaching').innerHTML =
+    `<div class="cgrid" style="margin-top:16px">` +
+    card('--thr', 'What you do well', items(C.pros, x => x.detail)) +
+    card('--brk', 'Where you lose time', items(C.cons, x => x.detail)) +
+    card('--a', 'What to practise next (in this order)', C.improve.length ? items(C.improve, x => x.how) : '<div class="sub">Nothing urgent. Keep building consistency.</div>') +
+    card('--coast', 'Stop doing this', items(C.stopDoing, x => x.detail) || '<div class="sub">Nothing flagged.</div>') +
+    `</div>` +
+    `<div class="cgrid" style="margin-top:16px">` +
+    card('--a', 'Put on your HUD', items(C.hud.show.map(h => ({ title: h.item, detail: h.why })), x => x.detail)) +
+    card('--muted', 'Take off your HUD', items(C.hud.hide.map(h => ({ title: h.item, detail: h.why })), x => x.detail)) +
+    `</div>` +
+    `<div class="panel"><h2>Settings notes for a ${typeName}</h2>${C.settings.map(s => `<div class="item"><span class="sub">${esc(s)}</span></div>`).join('')}</div>`;
+})();
+
+$('findings').innerHTML = S.findings.length ? S.findings.slice(0, 8).map(f =>
+  `<div class="finding"><b><span class="tag ${f.kind}">${f.kind}</span>${esc(f.title)}</b><span class="sub">${esc(f.detail)}</span></div>`).join('')
+  : '<div class="sub">No clear problems found. Drive more laps for a better comparison.</div>';
+
+// ---- track map ----
+(function map() {
+  const t = T[S.bestLap.num], svg = $('map');
+  const xs = t.x, zs = t.z;
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
+  const sc = 360 / Math.max(maxX - minX, maxZ - minZ, 1);
+  const ox = (400 - (maxX - minX) * sc) / 2, oz = (400 - (maxZ - minZ) * sc) / 2;
+  const P = i => [ox + (xs[i] - minX) * sc, oz + (zs[i] - minZ) * sc];
+  const col = i => t.brk[i] > 0.05 ? css('--brk') : t.thr[i] > 0.95 ? css('--thr') : t.thr[i] < 0.05 ? css('--coast') : css('--a');
+  for (let i = 1; i < xs.length; i++) {
+    const [x1, y1] = P(i - 1), [x2, y2] = P(i);
+    el('line', { x1, y1, x2, y2, stroke: col(i), 'stroke-width': 4, 'stroke-linecap': 'round' }, svg);
+  }
+  const [sx, sy] = P(0);
+  el('circle', { cx: sx, cy: sy, r: 5, fill: css('--ink') }, svg);
+  S.corners.forEach(c => {
+    const i = Math.min(xs.length - 1, Math.round(c.apex / 4));
+    const [x, y] = P(i);
+    const g = el('g', { style: 'cursor:pointer' }, svg);
+    el('circle', { cx: x, cy: y, r: 9, fill: css('--panel'), stroke: css('--muted') }, g);
+    const tx = el('text', { x, y: y + 4, 'text-anchor': 'middle', style: 'fill:var(--ink);font-size:9px;font-weight:600' }, g);
+    tx.textContent = c.name.slice(1);
+    g.addEventListener('click', () => zoomTo(c));
+  });
+  window.mapMarker = el('circle', { r: 6, fill: 'none', stroke: css('--ink'), 'stroke-width': 2, visibility: 'hidden' }, svg);
+  window.mapPos = d => { const i = Math.min(xs.length - 1, Math.max(0, Math.round(d / 4))); const [x, y] = P(i); mapMarker.setAttribute('cx', x); mapMarker.setAttribute('cy', y); mapMarker.setAttribute('visibility', 'visible'); };
+})();
+
+// ---- lap times ----
+(function laptimes() {
+  const svg = $('laptimes'), laps = S.laps.filter(l => !l.partial), w = 520, h = 170, pad = 34;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  const ts = laps.map(l => l.time), lo = Math.min(...ts) - 0.5, hi = Math.max(...ts) + 0.2;
+  const bw = (w - pad - 8) / laps.length;
+  laps.forEach((l, k) => {
+    const y = h - 22 - (l.time - lo) / (hi - lo) * (h - 40);
+    const fill = l.num === S.bestLap.num ? css('--thr') : (l.used ? css('--a') : css('--line'));
+    const r = el('rect', { x: pad + k * bw + 2, y, width: Math.max(2, bw - 4), height: h - 22 - y, fill, rx: 2 }, svg);
+    el("title", {}, r).textContent = `${l.label}: ${l.fmt}${l.invalid ? ' (invalid)' : ''}`;
+    if (laps.length <= 25) { const tx = el('text', { x: pad + k * bw + bw / 2, y: h - 8, 'text-anchor': 'middle' }, svg); tx.textContent = l.num; }
+  });
+  [lo + 0.5, (lo + hi) / 2, hi].forEach(v => { const y = h - 22 - (v - lo) / (hi - lo) * (h - 40); const tx = el('text', { x: pad - 4, y: y + 4, 'text-anchor': 'end' }, svg); tx.textContent = fmt(v); });
+})();
+
+// ---- input breakdown ----
+(function inputs() {
+  const med = S.laps.find(l => l.num === S.medianLap.num);
+  const row = (label, s) => {
+    const parts = [['--thr', s.fullThrottlePct, 'Full'], ['--a', s.partialPct, 'Part'], ['--coast', s.coastPct, 'Coast'], ['--brk', s.brakingPct, 'Brake']];
+    return `<div style="margin:8px 0"><div class="sub" style="font-size:12px">${label}</div><div style="display:flex;height:22px;border-radius:5px;overflow:hidden">` +
+      parts.map(([c, v, n]) => `<div title="${n} ${v}%" style="width:${v}%;background:var(${c});color:#111;font-size:11px;padding-left:4px;line-height:22px;overflow:hidden">${v >= 7 ? n + ' ' + Math.round(v) + '%' : ''}</div>`).join('') + '</div></div>';
+  };
+  $('inputs').innerHTML = row(`Best lap (${S.bestLap.fmt})`, best.stats) + (med && med.num !== best.num ? row(`Typical lap (${med.fmt})`, med.stats) : '') +
+    `<div class="note">Best lap: ${best.stats.gearShifts} gear changes, max braking ${best.stats.maxBrakeG} g, ${best.stats.lockMeters} m with a locked wheel, ${best.stats.spinMeters} m of rear wheelspin.</div>`;
+})();
+
+// ---- traces ----
+const lapNums = Object.keys(T).map(Number).sort((a, b) => a - b);
+['lapA', 'lapB'].forEach((id, k) => {
+  const s = $(id);
+  lapNums.forEach(n => { const l = S.laps.find(x => x.num === n); const o = document.createElement('option'); o.value = n; o.textContent = `${l ? l.label + " · " + l.fmt : "Lap " + n}${n === S.bestLap.num ? ' (best)' : ''}${l && l.invalid ? ' (inv)' : ''}`; s.appendChild(o); });
+  s.value = k === 0 ? S.bestLap.num : (S.medianLap.num !== S.bestLap.num ? S.medianLap.num : lapNums.find(n => n !== S.bestLap.num) ?? S.bestLap.num);
+  s.addEventListener('change', drawTraces);
+});
+let range = [0, S.trackLength];
+const zb = $('zoomBtns');
+const mk = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onclick = fn; zb.appendChild(b); zb.append(' '); return b; };
+mk('Full lap', () => { range = [0, S.trackLength]; drawTraces(); });
+S.corners.forEach(c => mk(c.name, () => zoomTo(c)));
+function zoomTo(c) { range = [Math.max(0, c.apex - 450), Math.min(S.trackLength, c.apex + 300)]; drawTraces(); $('traces').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+
+function drawTraces() {
+  const svg = $('traces'); svg.innerHTML = '';
+  const A = T[$('lapA').value], B = T[$('lapB').value];
+  const w = 1100, pad = 44, rows = [
+    { key: 'speed', label: 'Speed km/h', h: 150 }, { key: 'thr', label: 'Throttle', h: 70, max: 1, min: 0 },
+    { key: 'brk', label: 'Brake', h: 70, max: 1, min: 0 }, { key: 'steer', label: 'Steering', h: 70, sym: true },
+    { key: 'gear', label: 'Gear', h: 50 }, { key: 'delta', label: 'Δ time (s)', h: 90, sym: true }];
+  let y0 = 6; const gap = 14;
+  const total = rows.reduce((s, r) => s + r.h + gap, 0) + 20;
+  svg.setAttribute('viewBox', `0 0 ${w} ${total}`);
+  const [d0, d1] = range;
+  const X = d => pad + (d - d0) / (d1 - d0) * (w - pad - 10);
+  const delta = A.d.map((d, i) => (B.t[i] - A.t[i]));
+  // Delta is drawn once, in B's colour, even when A and B are the same lap.
+  const series = (L, key, role) => key === 'delta' ? (role === 'A' ? null : delta) : L[key];
+  const inRange = i => A.d[i] >= d0 && A.d[i] <= d1;
+  rows.forEach(r => {
+    const vals = [];
+    [[A, 'A'], [B, 'B']].forEach(([L, role]) => { const s = series(L, r.key, role); if (s) s.forEach((v, i) => { if (inRange(i) && isFinite(v)) vals.push(v); }); });
+    if (!vals.length) vals.push(0);
+    let lo = r.min ?? Math.min(...vals), hi = r.max ?? Math.max(...vals);
+    if (r.sym) { const m = Math.max(Math.abs(lo), Math.abs(hi), 0.05); lo = -m; hi = m; }
+    if (hi - lo < 1e-6) { hi = lo + 1; }
+    const Y = v => y0 + r.h - (v - lo) / (hi - lo) * r.h;
+    el('rect', { x: pad, y: y0, width: w - pad - 10, height: r.h, fill: 'none', stroke: css('--grid') }, svg);
+    if (r.sym) el('line', { x1: pad, x2: w - 10, y1: Y(0), y2: Y(0), stroke: css('--grid') }, svg);
+    const lt = el('text', { x: pad + 4, y: y0 + 12 }, svg); lt.textContent = r.label;
+    const ht = el('text', { x: pad - 4, y: y0 + 10, 'text-anchor': 'end' }, svg); ht.textContent = nf(hi, r.key === 'speed' || r.key === 'gear' ? 0 : 2);
+    const lo_t = el('text', { x: pad - 4, y: y0 + r.h, 'text-anchor': 'end' }, svg); lo_t.textContent = nf(lo, r.key === 'speed' || r.key === 'gear' ? 0 : 2);
+    [[A, '--a', 'A'], [B, '--b', 'B']].forEach(([L, c, role]) => {
+      const s = series(L, r.key, role); if (!s) return;
+      let dstr = '';
+      for (let i = 0; i < s.length; i++) { if (!inRange(i) || !isFinite(s[i])) continue; dstr += (dstr ? 'L' : 'M') + X(L.d[i]).toFixed(1) + ',' + Y(s[i]).toFixed(1); }
+      el('path', { d: dstr, fill: 'none', stroke: css(c), 'stroke-width': r.key === 'delta' ? 2 : 1.6 }, svg);
+    });
+    if (r.key === 'delta') { const t = el('text', { x: w - 14, y: y0 + 12, 'text-anchor': 'end' }, svg); t.textContent = 'above 0 = orange lap slower'; }
+    y0 += r.h + gap;
+  });
+  S.corners.forEach(c => {
+    if (c.apex < d0 || c.apex > d1) return;
+    el('line', { x1: X(c.apex), x2: X(c.apex), y1: 0, y2: y0, stroke: css('--line'), 'stroke-dasharray': '3 4' }, svg);
+    const t = el('text', { x: X(c.apex) + 3, y: y0 + 12 }, svg); t.textContent = c.name;
+  });
+  const cursor = el('line', { y1: 0, y2: y0, stroke: css('--muted'), visibility: 'hidden' }, svg);
+  svg.onmousemove = ev => {
+    const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const d = d0 + (p.x - pad) / (w - pad - 10) * (d1 - d0);
+    if (d < d0 || d > d1) return;
+    const i = Math.max(0, Math.min(A.d.length - 1, Math.round(d / 4)));
+    cursor.setAttribute('x1', X(A.d[i])); cursor.setAttribute('x2', X(A.d[i])); cursor.setAttribute('visibility', 'visible');
+    const f = L => `${nf(L.speed[i])} km/h · thr ${nf(L.thr[i] * 100)}% · brk ${nf(L.brk[i] * 100)}% · gear ${nf(L.gear[i])}${L.abs[i] > 0.5 ? ' · ABS' : ''}`;
+    $('hover').innerHTML = `<b>${Math.round(A.d[i])} m</b> &nbsp; <span style="color:var(--a)">A: ${f(A)}</span> &nbsp; <span style="color:var(--b)">B: ${f(B)}</span> &nbsp; Δ ${nf(delta[i], 3)} s`;
+    if (window.mapPos) mapPos(A.d[i]);
+  };
+}
+drawTraces();
+
+// ---- corners table ----
+(function corners() {
+  const t = $('corners');
+  const bal = v => !(v > 0) ? '-' : v < 0.75 ? `<span class="bad">under ${v}</span>` : v > 1.3 ? `<span class="bad">over ${v}</span>` : v;
+  t.innerHTML = '<tr><th>Corner</th><th>Best min km/h</th><th>Typical min</th><th>Brake before apex</th><th>Peak brake</th><th>Build-up s</th><th>Coast m</th><th>Throttle on</th><th>Full throttle</th><th>ABS</th><th>Loss s</th><th>Balance mid</th><th class="l">Notes</th></tr>' +
+    S.corners.map(c => { if (c.noData) return `<tr><td><b>${c.name}</b> <span class="sub">${c.apex} m</span></td><td colspan="12" class="l sub">No flying pass recorded (standing starts only)</td></tr>`; const m = c.median; const flat = !Number.isFinite(m.peakBrake) && !Number.isFinite(m.throttleOnAfterApex); return `<tr class="click" data-c="${c.name}"><td><b>${c.name}</b> <span class="sub">${c.apex} m${c.kind === 'fast' ? ' · fast' : ''}</span></td>` +
+      `<td>${nf(c.refMin)}</td><td>${nf(m.minSpeed)}</td><td>${flat ? 'flat out' : m.brakeBeforeApex === null || !Number.isFinite(m.brakeBeforeApex) ? 'lift' : nf(m.brakeBeforeApex) + ' m'}</td>` +
+      `<td>${Number.isFinite(m.peakBrake) ? nf(m.peakBrake * 100) + '%' : '-'}</td><td>${nf(m.timeToPeak, 2)}</td>` +
+      `<td class="${m.coastMeters >= 15 ? 'bad' : ''}">${nf(m.coastMeters)}</td><td>${Number.isFinite(m.throttleOnAfterApex) ? '+' + nf(m.throttleOnAfterApex) + ' m' : '-'}</td>` +
+      `<td>${flat ? '-' : Number.isFinite(m.fullThrottleAfterApex) ? '+' + nf(m.fullThrottleAfterApex) + ' m' : 'no'}</td><td class="${m.absPct > 0.35 ? 'bad' : ''}">${Number.isFinite(m.absPct) ? nf(m.absPct * 100) + '%' : '-'}</td>` +
+      `<td class="${c.lossAvg > 0.15 ? 'bad' : ''}">${nf(c.lossAvg, 2)}</td><td>${bal(c.balance.mid)}</td><td class="l">${esc(c.flags.join(', '))}</td></tr>`; }).join('');
+  t.querySelectorAll('tr.click').forEach(tr => tr.onclick = () => zoomTo(S.corners.find(c => c.name === tr.dataset.c)));
+})();
+
+// ---- setup & tyres ----
+$('setup').innerHTML = S.setup.map(s => `<div class="finding"><b><span class="tag">${esc(s.area)}</span>${esc(s.title)}</b><span class="sub">${esc(s.detail)}</span></div>`).join('');
+(function tyres() {
+  const temps = Object.values(S.carData.tyres).filter(Boolean).flatMap(t => [t.inner, t.middle, t.outer]);
+  const lo = Math.min(...temps, 60), hi = Math.max(...temps, 100);
+  const heat = v => `hsl(${Math.round(220 - 220 * (v - lo) / Math.max(1, hi - lo))} 75% 62%)`;
+  $('tyres').innerHTML = ['FL', 'FR', 'RL', 'RR'].map(w => {
+    const t = S.carData.tyres[w];
+    if (!t) return `<div class="tyre"><b>${w}</b><div class="sub">no data</div></div>`;
+    const order = (w === 'FL' || w === 'RL') ? [['O', t.outer], ['M', t.middle], ['I', t.inner]] : [['I', t.inner], ['M', t.middle], ['O', t.outer]];
+    return `<div class="tyre"><b>${w}</b><div class="bars">${order.map(([k, v]) => `<div style="background:${heat(v)}" title="${k}">${Math.round(v)}</div>`).join('')}</div>` +
+      `<div class="sub" style="font-size:12px">${t.psi ? t.psi + ' psi · ' : ''}brakes max ${t.maxBrakeTemp}°C · min ride ${t.minRide} cm</div></div>`;
+  }).join('');
+  $('carnote').textContent = `ABS setting: ${S.carData.absSetting >= 0 ? S.carData.absSetting : 'off/n.a.'} · TC setting: ${S.carData.tcSetting >= 0 ? S.carData.tcSetting : 'off/n.a.'}${S.carData.brakeBias ? ' · Brake bias reading: ' + S.carData.brakeBias + '%' : ''}. Bars are laid out as seen from behind the car (outside edges on the outside).`;
+})();
+</script>
+</body>
+</html>
