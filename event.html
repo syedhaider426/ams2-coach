@@ -52,6 +52,11 @@ td.heat { min-width: 58px; }
 svg text { fill: var(--muted); font-size: 11px; }
 .good { color: var(--good); } .bad { color: var(--bad); }
 .note { color: var(--muted); font-size: 12px; margin-top: 8px; }
+.traits { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 20px; }
+.trait b { font-weight: 600; }
+.dots { display: inline-flex; gap: 3px; vertical-align: -1px; margin-right: 6px; }
+.dots i { width: 14px; height: 8px; border-radius: 2px; background: var(--line); }
+.dots i.on { background: var(--a); }
 </style>
 </head>
 <body>
@@ -121,6 +126,7 @@ function overview() {
       <div class="tile"><div class="k">Theoretical best</div><div class="v">${best ? fmt(best.summary.theoreticalBest.time) : '-'}</div><div class="k">${best ? 'best sections of ' + esc(best.name) : ''}</div></div>
       <div class="tile"><div class="k">Consistency</div><div class="v">${best ? '±' + best.summary.consistency.stdev.toFixed(2) + ' s' : '-'}</div><div class="k">lap time spread, ${best ? esc(best.name) : ''}</div></div>
     </div>
+    ${best && best.summary.carProfile ? profileCard(best.summary.carProfile) : ''}
     <div class="panel"><h2>Every lap of the event</h2>
       <div class="legend">${E.sessions.map(s => `<span><span class="dot" style="background:var(${s.color})"></span>${esc(s.name)}</span>`).join('')}<span>○ = invalid lap</span></div>
       <svg id="allLaps" style="width:100%;display:block"></svg>
@@ -161,6 +167,14 @@ function allLapsChart() {
     el('title', {}, c).textContent = `${p.s.name} · ${p.l.label}: ${p.l.fmt}${p.l.invalid ? ' (invalid)' : ''}`;
     el('text', { x: X(i), y: h - 10, 'text-anchor': 'middle' }, svg).textContent = p.l.label.replace(/^.*lap /i, '');
   });
+}
+
+const dots = n => `<span class="dots" title="${n ? n + ' of 5' : 'not measured'}">${[1, 2, 3, 4, 5].map(i => `<i class="${n && i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+function profileCard(P) {
+  return `<div class="panel"><h2>About this car: ${esc(P.car)}</h2>
+    <div class="sub" style="margin:-6px 0 12px">Measured from your laps. More bars = more of that trait (for "How forgiving", more bars = easier).</div>
+    <div class="traits">${P.traits.map(t => `<div class="trait"><div>${dots(t.rating)}<b>${esc(t.name)}</b></div><div class="sub" style="font-size:12px">${esc(t.value)}</div><div class="sub" style="margin-top:2px">${esc(t.text)}</div></div>`).join('')}</div>
+    ${P.tips.length ? `<div style="margin-top:14px"><b>How to drive it</b>${P.tips.map(t => `<div class="sub" style="margin-top:4px">• ${esc(t)}</div>`).join('')}</div>` : ''}</div>`;
 }
 
 // Best lap vs 2nd best / worst / first: where the best lap gained time and what it did differently.

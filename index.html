@@ -53,6 +53,10 @@ a { color: var(--a); text-decoration: none; } a:hover { text-decoration: underli
 .legend { display: flex; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
 .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
 .good { color: var(--good); } .bad { color: var(--bad); }
+.dots { display: inline-flex; gap: 3px; vertical-align: -1px; }
+.dots i { width: 12px; height: 8px; border-radius: 2px; background: var(--line); }
+.dots i.on { background: var(--a); }
+td.trait { text-align: left; }
 </style>
 </head>
 <body>
@@ -67,6 +71,11 @@ a { color: var(--a); text-decoration: none; } a:hover { text-decoration: underli
   <div class="panel">
     <h2>Race weekends (practice, qualifying and race grouped)</h2>
     <div id="events"></div>
+  </div>
+  <div class="panel">
+    <h2>Your cars, compared</h2>
+    <div class="sub" style="margin:-6px 0 10px">How each car you've driven behaves, measured from your laps. More bars = more of that trait (for "How forgiving", more bars = easier).</div>
+    <div class="tablewrap" id="cars"></div>
   </div>
   <div class="chips" id="combos"></div>
   <div class="tiles" id="tiles"></div>
@@ -136,8 +145,25 @@ function events() {
     : '<div class="sub">No events yet.</div>';
 }
 
+// One row per car (from its most recent analysed session), so you can see why some cars feel harder.
+function cars() {
+  const latest = {};
+  DATA.sessions.forEach(s => { if (s.carProfile && !latest[s.car]) latest[s.car] = s; });
+  const list = Object.values(latest);
+  if (!list.length) { $('cars').innerHTML = '<div class="sub">Drive a full lap to see your car profiles.</div>'; return; }
+  const keys = list[0].carProfile.traits.map(t => [t.key, t.name]);
+  const dots = (n, title) => `<span class="dots" title="${esc(title)}">${[1, 2, 3, 4, 5].map(i => `<i class="${n && i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+  list.sort((a, b) => b.carProfile.traits.find(t => t.key === 'ease').rating - a.carProfile.traits.find(t => t.key === 'ease').rating);
+  $('cars').innerHTML = `<table><tr><th class="l">Car</th>${keys.map(([, n]) => `<th class="l">${esc(n)}</th>`).join('')}<th class="l"></th></tr>` +
+    list.map(s => `<tr><td class="l"><b>${esc(s.car)}</b><div class="sub" style="font-size:12px">${esc(pretty(s.track))}, ${day(s.date)}</div></td>` +
+      keys.map(([k]) => { const t = s.carProfile.traits.find(x => x.key === k); return `<td class="trait">${dots(t.rating, t.value + ': ' + t.text)}<div class="sub" style="font-size:11px">${esc(t.value)}</div></td>`; }).join('') +
+      `<td class="l"><a href="${R.report(s.base)}" target="_blank">Details</a></td></tr>`).join('') + '</table>' +
+    '<div class="sub" style="font-size:12px;margin-top:8px">Sorted from most to least forgiving. Hover the bars for an explanation; "Details" opens the full car profile with driving tips.</div>';
+}
+
 function render() {
   events();
+  cars();
   const sessions = DATA.sessions;
   $('where').textContent = `${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${DATA.dataDir ? 'reading ' + DATA.dataDir : 'published ' + day(DATA.publishedAt)}`;
   const combos = [...new Set(sessions.map(comboOf).filter(Boolean))];
