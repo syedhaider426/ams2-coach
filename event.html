@@ -163,6 +163,17 @@ function allLapsChart() {
   });
 }
 
+// Best lap vs 2nd best / worst / first: where the best lap gained time and what it did differently.
+function compareCards(S, s) {
+  const L = S.lapCompare;
+  if (!L || !L.comparisons.length) return `<div class="panel"><h2>What made your best lap faster</h2><div class="sub">Needs at least 2 clean, complete laps in this session.</div></div>`;
+  const rows = (list, gained) => list.map(r => `<div class="item"><b>${r.corner} <span class="${gained ? 'good' : 'bad'}">${gained ? 'gained' : 'lost'} ${Math.abs(r.gain).toFixed(2)} s</span></b><span class="sub">${esc(r.why.length ? r.why.join(', ') : 'small differences spread through the corner')}</span></div>`).join('');
+  return `<div class="panel"><h2>What made your best lap faster</h2><div class="sub">Best lap ${esc(L.best.label || '')} (${fmt(L.best.time)}) compared corner by corner.${S.assisted ? ' Braking assist was on, so braking and throttle differences are left out.' : ''} <a href="${R.report(s.base)}" target="_blank">See it on the charts</a></div>
+    <div class="cgrid" style="margin-top:12px">${L.comparisons.map(c => `<div><b>Best vs ${esc(c.title)}</b> <span class="sub">(${esc(c.label)}, ${c.delta.toFixed(3)} s slower)</span>
+      ${c.gained.length ? `<div class="sub" style="font-size:12px;margin-top:6px">Where your best lap gained time</div>${rows(c.gained, true)}` : ''}
+      ${c.lost.length ? `<div class="sub" style="font-size:12px;margin-top:6px">Where the ${esc(c.title)} did better</div>${rows(c.lost, false)}` : ''}</div>`).join('')}</div></div>`;
+}
+
 // ---------- one session ----------
 function sessionView(s) {
   if (s.error) {
@@ -209,6 +220,7 @@ function sessionView(s) {
       </table></div>
       <div class="note">Corner columns show how much slower each lap was through that section than your best pass (green = your best). Hover a cell for section time, minimum speed and coasting. Dimmed rows are invalid laps. <a href="${R.report(s.base)}" target="_blank">Open the full report</a> for traces, the track map and the corner table.</div>
     </div>
+    ${compareCards(S, s)}
     <div class="cgrid" style="margin-top:16px">
       ${card('--good', 'What you did well', items(C.pros, x => x.detail))}
       ${card('--bad', 'Where you lost time', items(C.cons, x => x.detail))}
