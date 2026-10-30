@@ -290,5 +290,6 @@ $('refresh').onclick = () => { lastSig = ''; load(); };
 load().catch(e => { $('where').textContent = 'Could not load sessions: ' + e.message; });
 setInterval(() => load().catch(() => {}), 20000);
 </script>
+<script src="nav.js"></script>
 </body>
 </html>
