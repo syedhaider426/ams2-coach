@@ -135,6 +135,7 @@ function rankedLaps() {
     ['lockMeters', 'Lock m', x => x.st.lockMeters, x => nf(x.st.lockMeters)],
     ['spinMeters', 'Spin m', x => x.st.spinMeters, x => nf(x.st.spinMeters)],
     ['corrections', 'Steer corr.', x => x.st.corrections, x => nf(x.st.corrections)],
+    ['incidents', 'Incidents', x => x.st.incidents, x => x.st.incidents ? `<span class="bad">${x.st.incidents}</span>` : '0'],
     ['gearShifts', 'Shifts', x => x.st.gearShifts, x => nf(x.st.gearShifts)],
   ];
   const col = cols.find(c => c[0] === lapOpts.sort) || cols[0];

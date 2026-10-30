@@ -65,6 +65,7 @@ td.trait { text-align: left; }
     <div>
       <h1>AMS2 Coach</h1>
       <div class="sub" id="where">Loading sessions...</div>
+      <div style="margin-top:6px"><a id="insightsLink" href="/insights"><b>My common issues →</b></a> <span class="sub">every incident and habit, across all your sessions</span></div>
     </div>
     <div><span class="sub" id="updated"></span> <button id="refresh">Refresh</button></div>
   </header>
@@ -113,7 +114,9 @@ const R = {
   event: id => STATIC ? "event.html?id=" + encodeURIComponent(id) : "/event/" + encodeURIComponent(id),
   report: base => STATIC ? "reports/" + encodeURIComponent(base) + ".html" : "/report/" + encodeURIComponent(base),
   home: () => STATIC ? "index.html" : "/",
+  insights: () => STATIC ? "insights.html" : "/insights",
 };
+document.addEventListener('DOMContentLoaded', () => { const a = document.getElementById('insightsLink'); if (a) a.href = R.insights(); });
 const $ = id => document.getElementById(id);
 const NS = 'http://www.w3.org/2000/svg';
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
