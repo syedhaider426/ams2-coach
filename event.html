@@ -110,9 +110,58 @@ async function load() {
 
 function render() {
   $('tabs').innerHTML = `<button class="tab${tab === 'overview' ? ' on' : ''}" data-t="overview">Overview</button>` +
+    `<button class="tab${tab === 'laps' ? ' on' : ''}" data-t="laps">All laps, ranked</button>` +
     E.sessions.map((s, i) => `<button class="tab${tab === String(i) ? ' on' : ''}" data-t="${i}"><span class="dot" style="background:var(${s.color})"></span>${esc(s.name)}<span class="n">${s.error ? 'no full lap' : s.summary.lapsComplete + ' laps'}</span></button>`).join('');
   $('tabs').querySelectorAll('.tab').forEach(b => b.onclick = () => { tab = b.dataset.t; render(); });
-  if (tab === 'overview') overview(); else sessionView(E.sessions[+tab]);
+  if (tab === 'overview') overview(); else if (tab === 'laps') rankedLaps(); else sessionView(E.sessions[+tab]);
+}
+
+// ---------- every lap of the event, best to worst ----------
+let lapOpts = { invalid: true, sort: 'time', dir: 1 };
+function rankedLaps() {
+  const all = [];
+  E.sessions.forEach(s => { if (!s.error) s.summary.laps.filter(l => !l.partial && l.time > 0).forEach(l => all.push({ s, l, st: l.stats || {} })); });
+  if (!all.length) { $('view').innerHTML = '<div class="panel"><div class="sub">No complete laps in this event yet.</div></div>'; return; }
+  const bestValid = Math.min(...all.filter(x => !x.l.invalid).map(x => x.l.time).concat([Infinity]));
+  const best = Number.isFinite(bestValid) ? bestValid : Math.min(...all.map(x => x.l.time));
+  const cols = [
+    ['time', 'Time', x => x.l.time, x => `<b>${fmt(x.l.time)}</b>`],
+    ['gap', 'Gap', x => x.l.time - best, x => x.l.time - best < 0.0005 ? '<span class="good">best</span>' : '+' + (x.l.time - best).toFixed(3)],
+    ['fullThrottlePct', 'Full thr', x => x.st.fullThrottlePct, x => nf(x.st.fullThrottlePct, 1) + '%'],
+    ['coastPct', 'Coast', x => x.st.coastPct, x => nf(x.st.coastPct, 1) + '%'],
+    ['brakingPct', 'Brake', x => x.st.brakingPct, x => nf(x.st.brakingPct, 1) + '%'],
+    ['topSpeed', 'Top km/h', x => x.st.topSpeed, x => nf(x.st.topSpeed)],
+    ['maxLatG', 'Max lat g', x => x.st.maxLatG, x => nf(x.st.maxLatG, 2)],
+    ['lockMeters', 'Lock m', x => x.st.lockMeters, x => nf(x.st.lockMeters)],
+    ['spinMeters', 'Spin m', x => x.st.spinMeters, x => nf(x.st.spinMeters)],
+    ['corrections', 'Steer corr.', x => x.st.corrections, x => nf(x.st.corrections)],
+    ['gearShifts', 'Shifts', x => x.st.gearShifts, x => nf(x.st.gearShifts)],
+  ];
+  const col = cols.find(c => c[0] === lapOpts.sort) || cols[0];
+  const rows = all.filter(x => lapOpts.invalid || !x.l.invalid).sort((a, b) => {
+    const va = col[2](a), vb = col[2](b);
+    return ((Number.isFinite(va) ? va : Infinity) - (Number.isFinite(vb) ? vb : Infinity)) * lapOpts.dir;
+  });
+  const timeRank = new Map(all.slice().sort((a, b) => a.l.time - b.l.time).map((x, i) => [x, i + 1]));
+  $('view').innerHTML = `<div class="panel">
+    <h2>All laps, ranked</h2>
+    <div class="sub" style="margin:-6px 0 10px">Every complete lap from every session of this event. Click a column header to sort by it (click again to reverse). Pedal and steering numbers are for that lap.</div>
+    <label class="sub" style="display:inline-flex;gap:6px;align-items:center;margin-bottom:8px"><input type="checkbox" id="showInv" ${lapOpts.invalid ? 'checked' : ''}> Show invalid laps</label>
+    <div class="tablewrap"><table id="ranked">
+      <tr><th>#</th><th class="l">Session</th><th class="l">Lap</th>${cols.map(c => `<th data-k="${c[0]}" style="cursor:pointer">${c[1]}${lapOpts.sort === c[0] ? (lapOpts.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}<th class="l"></th></tr>
+      ${rows.map(x => `<tr class="${x.l.invalid ? 'inv' : ''}${x.l.time === best ? ' bestrow' : ''}"><td>${timeRank.get(x)}</td>` +
+        `<td class="l"><span class="dot" style="background:var(${x.s.color})"></span>${esc(x.s.name)}</td>` +
+        `<td class="l">${esc(x.l.label)}${x.l.invalid ? ' <span class="tag">invalid</span>' : ''}${x.l.standing ? ' <span class="tag">standing start</span>' : ''}</td>` +
+        cols.map(c => `<td>${c[3](x)}</td>`).join('') +
+        `<td class="l"><a href="${R.report(x.s.base)}" target="_blank">Report</a></td></tr>`).join('')}
+    </table></div>
+    <div class="note"># is the lap's position by time across the whole event. Dimmed rows are invalid laps (track limits or cuts); the gap is measured to your best valid lap.</div>
+  </div>`;
+  $('showInv').onchange = e => { lapOpts.invalid = e.target.checked; rankedLaps(); };
+  $('ranked').querySelectorAll('th[data-k]').forEach(th => th.onclick = () => {
+    lapOpts.dir = lapOpts.sort === th.dataset.k ? -lapOpts.dir : 1;
+    lapOpts.sort = th.dataset.k; rankedLaps();
+  });
 }
 
 // ---------- overview ----------
